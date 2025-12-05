@@ -38,22 +38,66 @@ curl -H "Accept-Version: 1.1" http://localhost:8080/accounts/1
 curl -H "Accept-Version: 2.0" http://localhost:8080/accounts/1
 ```
 
-### 2. Anotaciones de Seguridad Nula con JSpecify
+### 2. Null Safety con JSpecify
 
-Spring Framework 7 adopta las anotaciones de JSpecify para mejorar la seguridad en tiempo de compilación y prevenir `NullPointerException`.
+Spring Framework 7 adopta JSpecify como estándar para anotaciones de nullabilidad, reemplazando las múltiples anotaciones que existían en el ecosistema Java (@Nonnull, @Nullable, @NotNull, etc.).
 
-**Ejemplo:**
+**Beneficios:**
+- Mejora las herramientas del IDE (detección de posibles NullPointerException)
+- Mejora la interoperabilidad con Kotlin
+- Reduce el riesgo de NullPointerException en codebases grandes
+- Estándar unificado para null safety
+
+**Ejemplo en Configuración:**
+```java
+@Configuration
+public class ApiVersioningConfig implements WebMvcConfigurer {
+    
+    @Override
+    public void configureApiVersioning(@NonNull ApiVersionConfigurer configurer) {
+        configurer.useRequestHeader("X-API-Version");
+    }
+}
+```
+
+**Ejemplo en Servicios:**
 ```java
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-public class AccountService {
-    public @NonNull List<Account> getAllAccounts() {
-        // Siempre retorna una lista no nula
+@Service
+public class UserService {
+    // @NonNull garantiza que nunca retorna null
+    public @NonNull Map<Long, User> getAllUsers() {
+        return new HashMap<>(users);
     }
     
-    public @Nullable Account getAccountById(@NonNull Long id) {
-        // Puede retornar null si no existe
+    // @Nullable indica que puede retornar null
+    public @Nullable User getUserById(@NonNull Long id) {
+        return users.get(id);
+    }
+    
+    // Parámetros @NonNull son requeridos, @Nullable son opcionales
+    public @NonNull User createUser(@NonNull String name, @NonNull String email, @Nullable String phone) {
+        return new User(name, email, phone);
+    }
+}
+```
+
+**Ejemplo en Modelos:**
+```java
+public class User {
+    private @NonNull String name;  // Nunca puede ser null
+    private @NonNull String email; // Nunca puede ser null
+    private @Nullable String phone; // Puede ser null
+    
+    public @Nullable String getPhone() {
+        return phone;
+    }
+    
+    // Método helper para valores por defecto
+    public @NonNull String getPhoneOrDefault(@NonNull String defaultValue) {
+        return phone != null ? phone : defaultValue;
     }
 }
 ```
@@ -193,6 +237,64 @@ public class ResilientQuoteService {
 }
 ```
 
+### 6. Múltiples TaskDecorator Beans
+
+Spring Framework 7 permite definir múltiples `TaskDecorator` beans que se componen automáticamente en una cadena. Esto elimina la necesidad de crear decoradores compuestos manualmente.
+
+**Configuración:**
+```java
+@Configuration
+@EnableAsync
+public class AsyncConfiguration {
+}
+
+@Configuration
+public class TaskDecoratorConfiguration {
+    
+    @Bean
+    @Order(2)
+    TaskDecorator loggingTaskDecorator() {
+        return runnable -> () -> {
+            log.info("Running Task: {}", runnable);
+            try {
+                runnable.run();
+            } finally {
+                log.info("Finished Task: {}", runnable);
+            }
+        };
+    }
+    
+    @Bean
+    @Order(1)
+    TaskDecorator measuringTaskDecorator() {
+        return runnable -> () -> {
+            final var startTime = System.currentTimeMillis();
+            try {
+                runnable.run();
+            } finally {
+                final var endTime = System.currentTimeMillis();
+                log.info("Finished within {}ms", endTime - startTime);
+            }
+        };
+    }
+}
+```
+
+**Uso con eventos asíncronos:**
+```java
+@Component
+public class HelloWorldEventLogger {
+    
+    @Async
+    @EventListener
+    public void logHelloWorldEvent(HelloWorldEvent event) {
+        log.info("Hello World Event: {}", event.message());
+    }
+}
+```
+
+Los decoradores se aplican automáticamente en el orden especificado por `@Order`.
+
 ## Requisitos
 
 - Java 21 o superior
@@ -233,6 +335,13 @@ public class ResilientQuoteService {
 - `GET /resilient-quotes/random` - Chiste aleatorio con reintentos automáticos
 - `GET /resilient-quotes/categories` - Categorías con límite de concurrencia
 - `GET /resilient-quotes/random-resilient` - Chiste aleatorio con ambas políticas de resiliencia
+- `GET /events/hello?message={message}` - Publica un evento asíncrono (demuestra TaskDecorator)
+- `GET /users` - Obtener todos los usuarios (demuestra JSpecify null safety)
+- `GET /users/{id}` - Obtener usuario por ID
+- `GET /users/search?email={email}` - Buscar usuario por email
+- `POST /users` - Crear nuevo usuario
+- `PUT /users/{id}` - Actualizar usuario
+- `DELETE /users/{id}` - Eliminar usuario
 
 ## Estructura del Proyecto
 
