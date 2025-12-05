@@ -8,12 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Controlador para endpoints con versionado
  * 
- * NOTA IMPORTANTE: Basado en pruebas y comportamiento observado,
- * Spring Framework 7 parece NO permitir mezclar métodos con atributo 'version'
- * y métodos sin 'version' en el mismo controlador cuando el versionado está activo.
- * 
- * Solución: Todos los métodos en este controlador tienen versión.
- * El método sin versión está en HelloDefaultController.
+ * Demuestra el uso del atributo 'version' en @GetMapping
+ * para crear diferentes versiones del mismo endpoint
  */
 @RestController
 @RequestMapping("/hello")
@@ -30,8 +26,5 @@ public class HelloController {
     public String sayHelloV2() {
         return "Hi World";
     }
-    
-    // NOTA: El método sin versión se movió a HelloDefaultController
-    // para evitar conflictos cuando el versionado está activo
 }
 
