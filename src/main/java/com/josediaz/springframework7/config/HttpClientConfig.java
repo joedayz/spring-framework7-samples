@@ -4,6 +4,7 @@ import com.josediaz.springframework7.client.QuoteClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.resilience.annotation.EnableResilientMethods;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
@@ -15,8 +16,12 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
  * pero más ligero y completamente integrado con Spring Framework 7
  * 
  * Usa la API pública de Chuck Norris: https://api.chucknorris.io/
+ * 
+ * @EnableResilientMethods habilita las anotaciones de resiliencia (@Retryable, @ConcurrencyLimit)
+ * que son nuevas características de Spring Framework 7
  */
 @Configuration
+@EnableResilientMethods
 public class HttpClientConfig {
 
     /**

@@ -1,5 +1,6 @@
 package com.josediaz.springframework7.client;
 
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 
@@ -10,17 +11,24 @@ import org.springframework.web.service.annotation.HttpExchange;
  * 
  * Este cliente consume la API pública de Chuck Norris: https://api.chucknorris.io/
  * 
- * Este cliente se registra automáticamente mediante @ImportHttpServices en HttpClientConfig
- * y se configura mediante RestClientHttpServiceGroupConfigurer
+ * Demuestra el uso de anotaciones de resiliencia (@Retryable, @ConcurrencyLimit)
+ * que son nuevas características de Spring Framework 7
  */
 @HttpExchange
 public interface QuoteClient {
 
     /**
      * Obtiene un chiste aleatorio de Chuck Norris
+     * 
+     * Con anotaciones de resiliencia:
+     * - @Retryable: Reintenta automáticamente si falla la llamada
+     * - @ConcurrencyLimit(3): Limita a 3 llamadas concurrentes
+     * 
      * @return Respuesta completa con el chiste
      */
     @GetExchange("/jokes/random")
+    @Retryable
+    @org.springframework.resilience.annotation.ConcurrencyLimit(3)
     ChuckNorrisJoke getRandomJoke();
 
     /**

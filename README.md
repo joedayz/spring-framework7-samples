@@ -141,6 +141,58 @@ public class HelloV4Controller {
 }
 ```
 
+### 5. Anotaciones de Resiliencia (@Retryable y @ConcurrencyLimit)
+
+Spring Framework 7 introduce anotaciones de resiliencia integradas que simplifican agregar patrones de resiliencia sin bibliotecas adicionales como Resilience4j.
+
+**Características:**
+- `@Retryable` - Reintentos automáticos en caso de fallos
+- `@ConcurrencyLimit` - Límite de llamadas concurrentes
+- `@EnableResilientMethods` - Habilita las anotaciones de resiliencia
+
+**Configuración:**
+```java
+@Configuration
+@EnableResilientMethods
+public class HttpClientConfig {
+    // Las anotaciones @Retryable y @ConcurrencyLimit ahora están activas
+}
+```
+
+**Ejemplo en Cliente HTTP:**
+```java
+@HttpExchange
+public interface QuoteClient {
+    @GetExchange("/jokes/random")
+    @Retryable
+    @ConcurrencyLimit(3)
+    ChuckNorrisJoke getRandomJoke();
+}
+```
+
+**Ejemplo en Servicio:**
+```java
+@Service
+public class ResilientQuoteService {
+    
+    @Retryable
+    public ChuckNorrisJoke getRandomJokeWithRetry() {
+        return quoteClient.getRandomJoke();
+    }
+    
+    @ConcurrencyLimit(5)
+    public String[] getCategoriesWithLimit() {
+        return quoteClient.getCategories();
+    }
+    
+    @Retryable
+    @ConcurrencyLimit(3)
+    public ChuckNorrisJoke getRandomJokeResilient() {
+        return quoteClient.getRandomJoke();
+    }
+}
+```
+
 ## Requisitos
 
 - Java 21 o superior
@@ -175,9 +227,12 @@ public class HelloV4Controller {
 - `PUT /accounts/{id}` - Actualizar cuenta
 - `DELETE /accounts/{id}` - Eliminar cuenta
 - `GET /quotes/random` - Chiste aleatorio de Chuck Norris (texto plano)
-- `GET /quotes/random?format=json` - Chiste aleatorio de Chuck Norris (JSON completo)
-- `GET /quotes/random?category={category}` - Chiste aleatorio por categoría
+- `GET /quotes/random/json` - Chiste aleatorio de Chuck Norris (JSON completo)
+- `GET /quotes/random/category?category={category}` - Chiste aleatorio por categoría
 - `GET /quotes/categories` - Lista de categorías disponibles
+- `GET /resilient-quotes/random` - Chiste aleatorio con reintentos automáticos
+- `GET /resilient-quotes/categories` - Categorías con límite de concurrencia
+- `GET /resilient-quotes/random-resilient` - Chiste aleatorio con ambas políticas de resiliencia
 
 ## Estructura del Proyecto
 
